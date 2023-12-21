@@ -1,4 +1,4 @@
-function Validator(formSelector, options = {}) {
+function Validator(formSelector) {
     function getParent(element, selector) {
         while (element.parentElement) {
             if (element.parentElement.matches(selector)) {
@@ -7,6 +7,7 @@ function Validator(formSelector, options = {}) {
             element = element.parentElement;
         }
     }
+    let _this = this;
     let formRules = {};
     /**
      * if an exception occurs when return `message exception`
@@ -63,10 +64,10 @@ function Validator(formSelector, options = {}) {
         function handleValidate(event) {
             let rules = formRules[event.target.name];
             let errorMessage;
-            rules.find(function (rule) {
+            for (let rule of rules) {
                 errorMessage = rule(event.target.value);
-                return errorMessage;
-            });
+                if (errorMessage) break;
+            }
             //If have exception => show exception to UI.
             if (errorMessage) {
                 let formGroup = getParent(event.target, '.form-group');
@@ -103,7 +104,7 @@ function Validator(formSelector, options = {}) {
         }
         //When don't exception when submit form
         if (isValid) {
-            if (typeof options.onSubmit === 'function') {
+            if (typeof _this.onSubmit === 'function') {
                 let enableInputs = formElement.querySelectorAll('[name]');
                 let formValues = Array.from(enableInputs).reduce(function (values, input) {
                     switch (input.type) {
@@ -129,7 +130,7 @@ function Validator(formSelector, options = {}) {
                     return values;
                 }, {});
                 //Call onSubmit and return form
-                options.onSubmit(formValues);
+                _this.onSubmit(formValues);
             } else {
                 formElement.submit();
             }
