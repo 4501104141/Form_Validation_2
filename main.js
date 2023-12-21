@@ -1,4 +1,4 @@
-function Validator(formSelector) {
+function Validator(formSelector, options = {}) {
     function getParent(element, selector) {
         while (element.parentElement) {
             if (element.parentElement.matches(selector)) {
@@ -78,6 +78,7 @@ function Validator(formSelector) {
                     }
                 }
             }
+            return !errorMessage;
         }
         //Clear message exception
         function handleClearError(event) {
@@ -88,6 +89,49 @@ function Validator(formSelector) {
                 if (formMessage) {
                     formMessage.innerText = '';
                 }
+            }
+        }
+    }
+    formElement.onsubmit = function (event) {
+        event.preventDefault();
+        let inputs = formElement.querySelectorAll('[name][rules]');
+        let isValid = true;
+        for (let input of inputs) {
+            if (!handleValidate({ target: input })) {
+                isValid = false;
+            }
+        }
+        //When don't exception when submit form
+        if (isValid) {
+            if (typeof options.onSubmit === 'function') {
+                let enableInputs = formElement.querySelectorAll('[name]');
+                let formValues = Array.from(enableInputs).reduce(function (values, input) {
+                    switch (input.type) {
+                        case 'radio':
+                            values[input.name] = formElement.querySelector('input[name="' + input.name + '"]:checked').value;
+                            break;
+                        case 'checkbox':
+                            if (!input.matches(':checked')) {
+                                values[input.name] = '';
+                                return values;
+                            }
+                            if (!Array.isArray(values[input.name])) {
+                                values[input.name] = [];
+                            }
+                            values[input.name].push(input.value);
+                            break;
+                        case 'file':
+                            values[input.name] = input.files;
+                            break;
+                        default:
+                            values[input.name] = input.value;
+                    }
+                    return values;
+                }, {});
+                //Call onSubmit and return form
+                options.onSubmit(formValues);
+            } else {
+                formElement.submit();
             }
         }
     }
