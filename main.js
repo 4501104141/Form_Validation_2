@@ -1,4 +1,12 @@
 function Validator(formSelector) {
+    function getParent(element, selector) {
+        while (element.parentElement) {
+            if (element.parentElement.matches(selector)) {
+                return element.parentElement;
+            }
+            element = element.parentElement;
+        }
+    }
     let formRules = {};
     /**
      * if an exception occurs when return `message exception`
@@ -49,10 +57,38 @@ function Validator(formSelector) {
             }
             //Listen event to do validate (blur, change, ...)
             input.onblur = handleValidate;
+            input.oninput = handleClearError;
         }
         //Perform validation
         function handleValidate(event) {
-            console.log(event.target.value);
+            let rules = formRules[event.target.name];
+            let errorMessage;
+            rules.find(function (rule) {
+                errorMessage = rule(event.target.value);
+                return errorMessage;
+            });
+            //If have exception => show exception to UI.
+            if (errorMessage) {
+                let formGroup = getParent(event.target, '.form-group');
+                if (formGroup) {
+                    formGroup.classList.add('invalid')
+                    let formMessage = formGroup.querySelector('.form-message');
+                    if (formMessage) {
+                        formMessage.innerText = errorMessage;
+                    }
+                }
+            }
+        }
+        //Clear message exception
+        function handleClearError(event) {
+            let formGroup = getParent(event.target, '.form-group');
+            let formMessage = formGroup.querySelector('.form-message');
+            if (formGroup.classList.contains('invalid')) {
+                formGroup.classList.remove('invalid');
+                if (formMessage) {
+                    formMessage.innerText = '';
+                }
+            }
         }
     }
 }
